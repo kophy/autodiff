@@ -1,0 +1,6 @@
+[package]
+name = "autodiff"
+version = "0.1.0"
+authors = ["kophy <kophy@protonmail.com>"]
+
+[dependencies]

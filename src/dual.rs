@@ -53,9 +53,6 @@ impl Div for Dual {
     type Output = Self;
 
     fn div(self, other: Dual) -> Self {
-        if other.real.abs() <= f64::EPSILON {
-            panic!("Zero is an invalid denominator!");
-        }
         let (r1, d1) = (&self.real, &self.dual);
         let (r2, d2) = (&other.real, &other.dual);
         Self::new(r1 / r2, (d1 * r2 - r1 * d2) / (r2 * r2))

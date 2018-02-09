@@ -3,19 +3,19 @@ use std::ops::{Add, Div, Mul, Sub};
 
 #[derive(Debug, Copy, Clone)]
 pub struct Dual {
-    pub r: f64, // real part
-    pub d: f64, // dual part
+    pub real: f64,
+    pub dual: f64,
 }
 
 impl Dual {
-    fn new(r: f64, d: f64) -> Dual {
-        Dual { r: r, d: d }
+    pub fn new(r: f64, d: f64) -> Dual {
+        Dual { real: r, dual: d }
     }
 }
 
 impl PartialEq for Dual {
     fn eq(&self, other: &Self) -> bool {
-        self.r == other.r && self.d == other.d
+        self.real == other.real && self.dual == other.dual
     }
 }
 
@@ -23,7 +23,9 @@ impl Add for Dual {
     type Output = Self;
 
     fn add(self, other: Self) -> Self {
-        Self::new(self.r + other.r, self.d + other.d)
+        let (r1, d1) = (&self.real, &self.dual);
+        let (r2, d2) = (&other.real, &other.dual);
+        Self::new(r1 + r2, d1 + d2)
     }
 }
 
@@ -31,7 +33,9 @@ impl Sub for Dual {
     type Output = Self;
 
     fn sub(self, other: Self) -> Self {
-        Self::new(self.r - other.r, self.d - other.d)
+        let (r1, d1) = (&self.real, &self.dual);
+        let (r2, d2) = (&other.real, &other.dual);
+        Self::new(r1 - r2, d1 - d2)
     }
 }
 
@@ -39,7 +43,9 @@ impl Mul for Dual {
     type Output = Self;
 
     fn mul(self, other: Self) -> Self {
-        Self::new(self.r * other.r, self.r * other.d + self.d * other.r)
+        let (r1, d1) = (&self.real, &self.dual);
+        let (r2, d2) = (&other.real, &other.dual);
+        Self::new(r1 * r2, r1 * d2 + d1 * r2)
     }
 }
 
@@ -47,22 +53,21 @@ impl Div for Dual {
     type Output = Self;
 
     fn div(self, other: Dual) -> Self {
-        if other.r.abs() <= f64::EPSILON {
+        if other.real.abs() <= f64::EPSILON {
             panic!("Zero is an invalid denominator!");
         }
-        Self::new(
-            self.r / other.r,
-            (self.d * other.r - self.r * other.d) / (other.r * other.r),
-        )
+        let (r1, d1) = (&self.real, &self.dual);
+        let (r2, d2) = (&other.real, &other.dual);
+        Self::new(r1 / r2, (d1 * r2 - r1 * d2) / (r2 * r2))
     }
 }
 
 impl ToString for Dual {
     fn to_string(&self) -> String {
-        if self.d.is_sign_negative() {
-            format!("{} - {}ε", self.r, self.d.abs())
+        if self.dual.is_sign_negative() {
+            format!("{} - {}ε", self.real, self.dual.abs())
         } else {
-            format!("{} + {}ε", self.r, self.d)
+            format!("{} + {}ε", self.real, self.dual)
         }
     }
 }
@@ -72,7 +77,7 @@ mod tests {
     use super::Dual;
 
     #[test]
-    fn dual_basic() {
+    fn test_dual_basic() {
         let d1 = Dual::new(1.0, 2.0);
         let d2 = Dual::new(3.0, 4.0);
         assert_eq!(d1 + d2, Dual::new(4.0, 6.0));
@@ -83,15 +88,17 @@ mod tests {
 
     #[test]
     #[should_panic]
-    fn dual_panic() {
+    fn test_div_panic() {
         let d1 = Dual::new(1.0, 2.0);
         let d2 = Dual::new(0.0, 4.0);
         assert_eq!(d1 / d2, Dual::new(0.0, 0.0));
     }
 
     #[test]
-    fn dual_to_string() {
-        assert_eq!(Dual::new(1.0, 2.0).to_string(), String::from("1 + 2ε"));
-        assert_eq!(Dual::new(1.0, -2.0).to_string(), String::from("1 - 2ε"));
+    fn test_dual_to_string() {
+        let d1 = Dual::new(1.0, 2.0);
+        let d2 = Dual::new(1.0, -2.0);
+        assert_eq!(d1.to_string(), String::from("1 + 2ε"));
+        assert_eq!(d2.to_string(), String::from("1 - 2ε"));
     }
 }
